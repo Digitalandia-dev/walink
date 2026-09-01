@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Compilación y Salidas
+dist/
+*.tsbuildinfo
+
+# Logs y Debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+bun.lockb
+
+# Sistema y Entornos
+.DS_Store
+Thumbs.db
+.env
+.env.*
+*.local
+
+# Archivos y Carpetas Privadas / Internas (Brand kits, notas internas, scratch)
+_*
+private-*/
+*-brand-kit/
+*.txt
+.turbo/
+.agents
