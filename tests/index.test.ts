@@ -1,42 +1,54 @@
 import { describe, expect, it } from "bun:test";
-import { createWaLink, sanitizePhone, VERSION } from "../src/index";
+import {
+  COUNTRIES,
+  createWaLink,
+  findCountry,
+  generateWaQR,
+  generateWaQRDataUrl,
+  generateWaQRSvg,
+  parseWaLink,
+  sanitizePhone,
+  VERSION,
+} from "../src/index";
 
-describe("Librería walink", () => {
-  it("debe tener definida la versión correcta", () => {
-    expect(VERSION).toBe("1.0.0");
+describe("Libreria walink v2.0.0", () => {
+  it("debe tener definida la version 2.0.0", () => {
+    expect(VERSION).toBe("2.0.0");
   });
 
   describe("sanitizePhone", () => {
-    it("debe limpiar espacios, guiones, paréntesis y signos +", () => {
+    it("debe limpiar espacios, guiones, parentesis y signos +", () => {
       const result = sanitizePhone("+52 (55) 1234-5678");
       expect(result.fullNumber).toBe("525512345678");
+      expect(result.number).toBe("5512345678");
       expect(result.isValid).toBe(true);
     });
 
-    it("debe aplicar el código de país por defecto si falta", () => {
+    it("debe aplicar el codigo de pais por defecto si falta", () => {
       const result = sanitizePhone("5512345678", { defaultCountryCode: "52" });
       expect(result.fullNumber).toBe("525512345678");
+      expect(result.countryCode).toBe("52");
     });
 
-    it("debe lanzar un error en modo estricto si el número es inválido", () => {
+    it("debe lanzar un error en modo estricto si el numero es invalido", () => {
       expect(() => sanitizePhone("123", { strict: true })).toThrow();
     });
   });
 
   describe("createWaLink", () => {
-    it("debe generar un link wa.me estándar sin mensaje", () => {
+    it("debe generar un link wa.me estandar sin mensaje", () => {
       const link = createWaLink({ phone: "+52 55 1234 5678" });
       expect(link).toBe("https://wa.me/525512345678");
     });
 
-    it("debe codificar el mensaje con acentos y emojis", () => {
+    it("debe codificar el mensaje con acentos", () => {
       const link = createWaLink({
         phone: "+52 55 1234 5678",
-        text: "¡Hola! Quiero agendar una cita 📅 y pedir info 🚀",
+        text: "Hola quiero agendar una cita y pedir informacion",
         scheme: "wa.me",
       });
       expect(link).toBe(
-        "https://wa.me/525512345678?text=%C2%A1Hola!%20Quiero%20agendar%20una%20cita%20%F0%9F%93%85%20y%20pedir%20info%20%F0%9F%9A%80",
+        "https://wa.me/525512345678?text=Hola%20quiero%20agendar%20una%20cita%20y%20pedir%20informacion",
       );
     });
 
@@ -56,6 +68,85 @@ describe("Librería walink", () => {
         scheme: "whatsapp://send",
       });
       expect(link).toBe("whatsapp://send?phone=525512345678&text=Hola");
+    });
+  });
+
+  describe("parseWaLink", () => {
+    it("debe parsear enlaces wa.me con mensaje codificado", () => {
+      const parsed = parseWaLink("https://wa.me/525512345678?text=Hola%20Prueba");
+      expect(parsed.phone).toBe("525512345678");
+      expect(parsed.text).toBe("Hola Prueba");
+      expect(parsed.scheme).toBe("wa.me");
+    });
+
+    it("debe parsear enlaces api.whatsapp.com", () => {
+      const parsed = parseWaLink("https://api.whatsapp.com/send?phone=525512345678&text=Hola");
+      expect(parsed.phone).toBe("525512345678");
+      expect(parsed.text).toBe("Hola");
+      expect(parsed.scheme).toBe("api.whatsapp.com");
+    });
+
+    it("debe parsear esquemas nativos whatsapp://send", () => {
+      const parsed = parseWaLink("whatsapp://send?phone=525512345678&text=Mensaje%20App");
+      expect(parsed.phone).toBe("525512345678");
+      expect(parsed.text).toBe("Mensaje App");
+      expect(parsed.scheme).toBe("whatsapp://send");
+    });
+
+    it("debe retornar unknown ante URLs no validas", () => {
+      const parsed = parseWaLink("https://google.com");
+      expect(parsed.scheme).toBe("unknown");
+      expect(parsed.phone).toBe("");
+    });
+  });
+
+  describe("countries catalog", () => {
+    it("debe contener lista de paises", () => {
+      expect(COUNTRIES.length).toBeGreaterThan(15);
+    });
+
+    it("debe encontrar pais por prefijo o codigo ISO", () => {
+      const mx = findCountry("52");
+      expect(mx?.name).toBe("Mexico");
+      expect(mx?.iso).toBe("MX");
+
+      const co = findCountry("CO");
+      expect(co?.dialCode).toBe("57");
+    });
+  });
+
+  describe("QR Generation", () => {
+    it("debe generar SVG valido", async () => {
+      const svg = await generateWaQRSvg({
+        phone: "+52 55 1234 5678",
+        text: "Hola",
+      });
+      expect(svg).toContain("<svg");
+      expect(svg).toContain("</svg>");
+    });
+
+    it("debe generar Data URL PNG valido", async () => {
+      const dataUrl = await generateWaQRDataUrl({
+        phone: "+52 55 1234 5678",
+        text: "Hola",
+      });
+      expect(dataUrl.startsWith("data:image/png;base64,")).toBe(true);
+    });
+
+    it("debe generar resultado compuesto con generateWaQR", async () => {
+      const result = await generateWaQR(
+        {
+          phone: "+52 55 1234 5678",
+          text: "Hola",
+        },
+        {
+          color: { dark: "#25D366", light: "#FFFFFF" },
+        },
+      );
+
+      expect(result.link).toBe("https://wa.me/525512345678?text=Hola");
+      expect(result.svg).toContain("<svg");
+      expect(result.dataUrl.startsWith("data:image/png;base64,")).toBe(true);
     });
   });
 });

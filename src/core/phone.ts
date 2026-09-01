@@ -1,52 +1,61 @@
-import type { PhoneSanitized } from "../types";
-
-export interface SanitizePhoneOptions {
-  defaultCountryCode?: string;
-  strict?: boolean;
-}
+import { COUNTRIES } from "../data/countries";
+import type { PhoneSanitized, SanitizePhoneOptions } from "../types";
 
 /**
- * Limpia un número de teléfono y valida el formato internacional E.164.
+ * Limpia un numero de telefono y valida el formato internacional E.164.
+ *
+ * @param phone - Numero telefonico con o sin formato.
+ * @param options - Opciones de prefijo por defecto y validacion estricta.
+ * @returns Objeto desglosado con codigo de pais, numero local, numero completo y validez.
  */
-export function sanitizePhone(
-  phone: string,
-  options?: SanitizePhoneOptions
-): PhoneSanitized {
+export function sanitizePhone(phone: string, options?: SanitizePhoneOptions): PhoneSanitized {
   const raw = phone ?? "";
-  
-  // Quitar todo lo que no sea dígito numérico (espacios, +, -, (), etc.)
+
+  // Quitar todo lo que no sea digito numerico (espacios, +, -, (), etc.)
   let cleaned = raw.replace(/\D/g, "");
 
-  // Limpiar también el código de país por defecto si viene con '+'
+  // Limpiar tambien el codigo de pais por defecto si viene con '+'
   const defaultCountry = options?.defaultCountryCode
     ? options.defaultCountryCode.replace(/\D/g, "")
     : undefined;
 
-  // Si el usuario no puso el '+' original y diste un país por defecto, agregarlo
+  // Si el usuario no puso el '+' original y diste un pais por defecto, agregarlo
   if (defaultCountry && cleaned.length > 0 && !raw.trim().startsWith("+")) {
     if (!cleaned.startsWith(defaultCountry)) {
       cleaned = `${defaultCountry}${cleaned}`;
     }
   }
 
-  // Validar norma E.164 (entre 7 y 15 dígitos en total)
+  // Detectar o inferir el codigo de pais
+  let countryCode = defaultCountry || "";
+  let localNumber = cleaned;
+
+  if (!countryCode && raw.trim().startsWith("+")) {
+    const matchedCountry = COUNTRIES.slice()
+      .sort((a, b) => b.dialCode.length - a.dialCode.length)
+      .find((c) => cleaned.startsWith(c.dialCode));
+
+    if (matchedCountry) {
+      countryCode = matchedCountry.dialCode;
+    }
+  }
+
+  if (countryCode && cleaned.startsWith(countryCode)) {
+    localNumber = cleaned.slice(countryCode.length);
+  }
+
+  // Validar norma E.164 (entre 7 y 15 digitos en total)
   const isValid = cleaned.length >= 7 && cleaned.length <= 15;
 
-  // Si activaron el modo estricto y no es válido, lanzar error
+  // Si activaron el modo estricto y no es valido, lanzar error
   if (options?.strict && !isValid) {
     throw new Error(
-      `Número de teléfono no válido: "${raw}". Se esperaban entre 7 y 15 dígitos según el estándar E.164.`
+      `Numero de telefono no valido: "${raw}". Se esperaban entre 7 y 15 digitos segun el estandar E.164.`,
     );
   }
 
-  // Separar código de país del número local
-  const finalCountryCode = defaultCountry || "";
-  const localNumber = finalCountryCode && cleaned.startsWith(finalCountryCode)
-    ? cleaned.slice(finalCountryCode.length)
-    : cleaned;
-
   return {
-    countryCode: finalCountryCode,
+    countryCode,
     number: localNumber,
     fullNumber: cleaned,
     isValid,
