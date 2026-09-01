@@ -1,5 +1,5 @@
 {
-  "name": "walink",
+  "name": "@digitalandia/walink",
   "version": "2.0.0",
   "description": "Libreria TypeScript ultraligera e isomorfica para crear enlaces, sanitizar numeros y generar codigos QR directos a WhatsApp.",
   "author": "Digitalandia",
