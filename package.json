@@ -1,6 +1,6 @@
 {
   "name": "@digitalandia/walink",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "TypeScript toolkit ligero e isomorfico para normalizar telefonos, generar enlaces y codigos QR vectoriales compatibles con WhatsApp.",
   "author": "Digitalandia",
   "license": "MIT",

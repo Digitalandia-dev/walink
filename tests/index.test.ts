@@ -14,9 +14,9 @@ import {
   VERSION,
 } from "../src/index";
 
-describe("Libreria walink v2.0.0", () => {
-  it("debe tener definida la version 2.0.0", () => {
-    expect(VERSION).toBe("2.0.0");
+describe("Libreria walink v2.0.1", () => {
+  it("debe tener definida la version 2.0.1", () => {
+    expect(VERSION).toBe("2.0.1");
   });
 
   describe("sanitizePhone y formatPhone", () => {

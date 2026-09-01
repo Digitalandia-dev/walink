@@ -5,6 +5,7 @@ TypeScript toolkit ligero, isomórfico y de alto rendimiento para **normalizar n
 <p align="left">
   <a href="https://www.npmjs.com/package/@digitalandia/walink"><img src="https://img.shields.io/npm/v/@digitalandia/walink.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
   <a href="https://bundlephobia.com/package/@digitalandia/walink"><img src="https://img.shields.io/bundlephobia/minzip/@digitalandia/walink?style=flat-square&color=00CC66" alt="bundle size" /></a>
+  <img src="https://img.shields.io/badge/Versi%C3%B3n-2.0.1-6366f1?style=flat-square" alt="Version 2.0.1" />
   <img src="https://img.shields.io/badge/Bundler-tsup-863bff?style=flat-square&logo=esbuild&logoColor=white" alt="tsup" />
   <img src="https://img.shields.io/badge/Linter_%26_Format-Biome_v2-60a5fa?style=flat-square&logo=biome&logoColor=white" alt="Biome v2" />
   <img src="https://img.shields.io/badge/Test_Runner-Bun_Test-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun Test" />

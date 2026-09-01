@@ -17,4 +17,4 @@ export * from "./types";
 /**
  * Exportar la version de la libreria
  */
-export const VERSION = "2.0.0";
+export const VERSION = "2.0.1";
