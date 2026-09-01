@@ -1,6 +1,6 @@
 # @digitalandia/walink
 
-Librería TypeScript ultraligera, isomórfica y de alto rendimiento para generar enlaces directos, sanitizar números bajo la norma internacional E.164 y crear códigos QR vectoriales e imprimibles para WhatsApp.
+TypeScript toolkit ligero, isomórfico y de alto rendimiento para **normalizar números telefónicos, generar enlaces directos y crear códigos QR vectoriales compatibles con WhatsApp**.
 
 <p align="left">
   <a href="https://www.npmjs.com/package/@digitalandia/walink"><img src="https://img.shields.io/npm/v/@digitalandia/walink.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
@@ -14,15 +14,23 @@ Librería TypeScript ultraligera, isomórfica y de alto rendimiento para generar
 
 ---
 
+## ¿Qué problema resuelve?
+
+Generar enlaces de WhatsApp parece trivial, pero en producción suele fallar por números con formatos irregulares (espacios, guiones, signos `+`, paréntesis o prefijos móviles desactualizados como el `+52 1` de México), mensajes mal codificados o códigos QR de baja resolución que se pixelan al imprimirse.
+
+`@digitalandia/walink` abstrae toda esta complejidad en un SDK compacto, sin dependencias pesadas y 100% isomórfico.
+
+---
+
 ## Características Principales
 
-- **Constructor Universal de Enlaces (`createWaLink`)**: Soporte para `wa.me`, `api.whatsapp.com` y esquema de app nativa `whatsapp://send`.
-- **Sanitización E.164 (`sanitizePhone` & `formatPhone`)**: Limpieza automática de espacios, paréntesis, guiones, símbolos y corrección del prefijo móvil de México (+52 1).
-- **Validador Rápido (`isValidPhone`)**: Verificación booleana instantánea para formularios y validaciones de entrada.
-- **Parser Inverso (`parseWaLink`)**: Descompone cualquier URL existente de WhatsApp extrayendo el teléfono, mensaje y esquema.
-- **Motor de Códigos QR (`generateWaQR`)**: Renderizado en **SVG vectorial** (para lonas, volantes y menús de restaurantes) y **Data URL PNG** (para preview y descarga web).
-- **Corrección de Error 'H' (30%)**: Permite incrustar logotipos en el centro del código QR sin afectar la lectura del escáner.
-- **Catálogo de Países (`COUNTRIES` & `findCountry`)**: Lista completa de países hispanohablantes e internacionales con prefijos y códigos ISO.
+- **Constructor Universal de Enlaces (`createWaLink`)**: Soporte para esquemas `wa.me`, `api.whatsapp.com` y esquema de app nativa `whatsapp://send` con codificación segura de caracteres especiales, emojis y saltos de línea.
+- **Normalización de Teléfonos (`sanitizePhone` & `formatPhone`)**: Limpieza de caracteres no numéricos y normalización a identificadores estándar E.164 compatibles con WhatsApp.
+- **Validador Rápido (`isValidPhone`)**: Validación booleana instantánea para formularios y validaciones de entrada en el cliente.
+- **Parser Inverso (`parseWaLink`)**: Descompone cualquier URL existente de WhatsApp extrayendo el teléfono limpio, el mensaje decodificado y el esquema.
+- **Motor de Códigos QR (`generateWaQR`)**: Renderizado en **SVG vectorial** (escalabilidad infinita para lonas, volantes y menús de restaurantes) y **Data URL PNG** (para vista previa y descarga web).
+- **Corrección de Error 'H' (30%)**: Permite incrustar logotipos en el centro del código QR sin comprometer la capacidad de escaneo.
+- **Catálogo de Países (`COUNTRIES` & `findCountry`)**: Lista de países hispanohablantes e internacionales con prefijos telefónicos y códigos ISO.
 - **Dual ESM / CJS & Tipado Estricto**: Compatible con React, Next.js, Vue, Svelte, Angular, Node.js, Bun, Deno y Edge Workers (Cloudflare, Vercel).
 
 ---
@@ -52,20 +60,20 @@ yarn add @digitalandia/walink
 ```typescript
 import { createWaLink } from "@digitalandia/walink";
 
-// Enlace simple
+// Enlace simple a partir de un número con formato
 const link = createWaLink({
   phone: "+52 (55) 1234-5678",
 });
-// https://wa.me/525512345678
+// Salida: "https://wa.me/525512345678"
 
-// Enlace con mensaje predeterminado y emojis
+// Enlace con mensaje predeterminado y prefijo por defecto
 const customLink = createWaLink({
   phone: "5512345678",
   defaultCountryCode: "52",
   text: "¡Hola! Quisiera agendar una cita y pedir información",
   scheme: "wa.me", // Opcional: 'wa.me' | 'api.whatsapp.com' | 'whatsapp://send'
 });
-// https://wa.me/525512345678?text=%C2%A1Hola!%20Quisiera%20agendar%20una%20cita%20y%20pedir%20informaci%C3%B3n
+// Salida: "https://wa.me/525512345678?text=%C2%A1Hola!%20Quisiera%20agendar%20una%20cita%20y%20pedir%20informaci%C3%B3n"
 ```
 
 ---
@@ -75,7 +83,7 @@ const customLink = createWaLink({
 ```typescript
 import { generateWaQR, generateWaQRSvg, generateWaQRDataUrl } from "@digitalandia/walink";
 
-// Generar tanto SVG como PNG Data URL
+// Generar tanto SVG como PNG Data URL en una sola llamada
 const qr = await generateWaQR(
   {
     phone: "+52 55 1234 5678",
@@ -87,7 +95,7 @@ const qr = await generateWaQR(
     errorCorrectionLevel: "H", // Nivel alto (30%) para colocar logos centrales
     color: {
       dark: "#25D366", // Color del código
-      light: "#FFFFFF", // Fondo
+      light: "#FFFFFF", // Color de fondo
     },
   }
 );
@@ -102,7 +110,7 @@ console.log(qr.dataUrl); // data:image/png;base64,... (Listo para <img src="..."
 ### 3. Ejemplo de Integración en React / Next.js
 
 ```tsx
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { createWaLink, generateWaQRDataUrl, isValidPhone } from "@digitalandia/walink";
 
 export function WhatsAppWidget() {
@@ -111,7 +119,7 @@ export function WhatsAppWidget() {
   const [qrCode, setQrCode] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!isValidPhone(phone)) return alert("Número no válido");
+    if (!isValidPhone(phone)) return alert("Número telefónico no válido");
 
     const link = createWaLink({ phone, text: message });
     const qr = await generateWaQRDataUrl(link, { width: 280 });
@@ -149,21 +157,21 @@ export function WhatsAppWidget() {
 
 ---
 
-### 4. Sanitización y Validación de Teléfonos
+### 4. Normalización y Validación de Teléfonos
 
 ```typescript
 import { sanitizePhone, formatPhone, isValidPhone, formatPhoneDisplay } from "@digitalandia/walink";
 
-// Validación rápida
+// Validación booleana rápida
 if (isValidPhone("+52 55 1234 5678")) {
-  console.log("Número válido");
+  console.log("Estructura válida para WhatsApp");
 }
 
-// Normalización al estándar E.164 (corrige automáticamente casos como +52 1 en México)
+// Normalización al formato E.164 (corrige automáticamente casos como +52 1 en México)
 const normalized = formatPhone("+52 1 (55) 1234-5678");
 // "525512345678"
 
-// Desglose detallado
+// Desglose estructurado
 const info = sanitizePhone("+52 (55) 1234-5678");
 // {
 //   countryCode: "52",
@@ -218,11 +226,11 @@ const colombia = findCountry("CO");
 | `generateWaQRDataUrl(linkOrOptions, qrOptions?)` | Genera la cadena Data URL en PNG Base64. |
 | `sanitizePhone(phone, options?)` | Desglosa el teléfono en `{ countryCode, number, fullNumber, isValid }`. |
 | `formatPhone(phone, defaultCountryCode?)` | Normaliza el número al formato estándar internacional E.164. |
-| `isValidPhone(phone, defaultCountryCode?)` | Retorna un booleano indicando si el número es válido bajo E.164. |
+| `isValidPhone(phone, defaultCountryCode?)` | Retorna un booleano indicando si el número cumple la estructura E.164. |
 | `formatPhoneDisplay(phone)` | Añade el prefijo `+` para formateo visual legible. |
 | `parseWaLink(url)` | Extrae número, mensaje decodificado y esquema desde cualquier link existente. |
 | `findCountry(query)` | Busca un país por prefijo telefónico o código ISO 3166-1. |
-| `COUNTRIES` | Catálogo completo de países con código ISO, nombre y dialCode. |
+| `COUNTRIES` | Catálogo de países con código ISO, nombre y dialCode. |
 | `VERSION` | Cadena con la versión semántica actual de la librería. |
 
 ---

@@ -1,7 +1,7 @@
 {
   "name": "@digitalandia/walink",
   "version": "2.0.0",
-  "description": "Libreria TypeScript ultraligera e isomorfica para crear enlaces, sanitizar numeros y generar codigos QR directos a WhatsApp.",
+  "description": "TypeScript toolkit ligero e isomorfico para normalizar telefonos, generar enlaces y codigos QR vectoriales compatibles con WhatsApp.",
   "author": "Digitalandia",
   "license": "MIT",
   "homepage": "https://github.com/Digitalandia-dev/walink#readme",
@@ -16,8 +16,10 @@
     "typescript",
     "walink",
     "whatsapp",
-    "link",
+    "whatsapp-links",
+    "phone-normalization",
     "qr-code",
+    "svg-qr",
     "e164",
     "digitalandia"
   ],
