@@ -1,9 +1,10 @@
-# walink
+# @digitalandia/walink
 
 Librería TypeScript ultraligera, isomórfica y de alto rendimiento para generar enlaces directos, sanitizar números bajo la norma internacional E.164 y crear códigos QR vectoriales e imprimibles para WhatsApp.
 
 <p align="left">
-  <img src="https://img.shields.io/badge/Versi%C3%B3n-2.0.0-6366f1?style=flat-square" alt="Version 2.0.0" />
+  <a href="https://www.npmjs.com/package/@digitalandia/walink"><img src="https://img.shields.io/npm/v/@digitalandia/walink.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
+  <a href="https://bundlephobia.com/package/@digitalandia/walink"><img src="https://img.shields.io/bundlephobia/minzip/@digitalandia/walink?style=flat-square&color=00CC66" alt="bundle size" /></a>
   <img src="https://img.shields.io/badge/Bundler-tsup-863bff?style=flat-square&logo=esbuild&logoColor=white" alt="tsup" />
   <img src="https://img.shields.io/badge/Linter_%26_Format-Biome_v2-60a5fa?style=flat-square&logo=biome&logoColor=white" alt="Biome v2" />
   <img src="https://img.shields.io/badge/Test_Runner-Bun_Test-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun Test" />
@@ -22,21 +23,24 @@ Librería TypeScript ultraligera, isomórfica y de alto rendimiento para generar
 - **Motor de Códigos QR (`generateWaQR`)**: Renderizado en **SVG vectorial** (para lonas, volantes y menús de restaurantes) y **Data URL PNG** (para preview y descarga web).
 - **Corrección de Error 'H' (30%)**: Permite incrustar logotipos en el centro del código QR sin afectar la lectura del escáner.
 - **Catálogo de Países (`COUNTRIES` & `findCountry`)**: Lista completa de países hispanohablantes e internacionales con prefijos y códigos ISO.
-- **Dual ESM / CJS & Tipado Estricto**: Compatible con React, Next.js, Vue, Vite, Node.js, Bun, Deno y Edge Workers.
+- **Dual ESM / CJS & Tipado Estricto**: Compatible con React, Next.js, Vue, Svelte, Angular, Node.js, Bun, Deno y Edge Workers (Cloudflare, Vercel).
 
 ---
 
 ## Instalación
 
 ```bash
-# Con Bun
-bun add walink
-
 # Con NPM
-npm install walink
+npm install @digitalandia/walink
+
+# Con Bun
+bun add @digitalandia/walink
 
 # Con PNPM
-pnpm add walink
+pnpm add @digitalandia/walink
+
+# Con Yarn
+yarn add @digitalandia/walink
 ```
 
 ---
@@ -46,7 +50,7 @@ pnpm add walink
 ### 1. Crear un enlace directo de WhatsApp
 
 ```typescript
-import { createWaLink } from "walink";
+import { createWaLink } from "@digitalandia/walink";
 
 // Enlace simple
 const link = createWaLink({
@@ -58,10 +62,10 @@ const link = createWaLink({
 const customLink = createWaLink({
   phone: "5512345678",
   defaultCountryCode: "52",
-  text: "¡Hola! Quisiera agendar una cita 📅 y pedir información 🚀",
+  text: "¡Hola! Quisiera agendar una cita y pedir información",
   scheme: "wa.me", // Opcional: 'wa.me' | 'api.whatsapp.com' | 'whatsapp://send'
 });
-// https://wa.me/525512345678?text=%C2%A1Hola!%20Quisiera%20agendar%20una%20cita%20%F0%9F%93%85%20y%20pedir%20informaci%C3%B3n%20%F0%9F%9A%80
+// https://wa.me/525512345678?text=%C2%A1Hola!%20Quisiera%20agendar%20una%20cita%20y%20pedir%20informaci%C3%B3n
 ```
 
 ---
@@ -69,7 +73,7 @@ const customLink = createWaLink({
 ### 2. Generar Códigos QR (SVG Vectorial y Data URL PNG)
 
 ```typescript
-import { generateWaQR, generateWaQRSvg, generateWaQRDataUrl } from "walink";
+import { generateWaQR, generateWaQRSvg, generateWaQRDataUrl } from "@digitalandia/walink";
 
 // Generar tanto SVG como PNG Data URL
 const qr = await generateWaQR(
@@ -95,10 +99,60 @@ console.log(qr.dataUrl); // data:image/png;base64,... (Listo para <img src="..."
 
 ---
 
-### 3. Sanitización y Validación de Teléfonos
+### 3. Ejemplo de Integración en React / Next.js
+
+```tsx
+import { useState, useTransition } from "react";
+import { createWaLink, generateWaQRDataUrl, isValidPhone } from "@digitalandia/walink";
+
+export function WhatsAppWidget() {
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [qrCode, setQrCode] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    if (!isValidPhone(phone)) return alert("Número no válido");
+
+    const link = createWaLink({ phone, text: message });
+    const qr = await generateWaQRDataUrl(link, { width: 280 });
+    setQrCode(qr);
+  };
+
+  return (
+    <div className="p-4 border rounded-xl max-w-sm">
+      <input
+        type="tel"
+        placeholder="Teléfono (ej: +52 55 1234 5678)"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        className="w-full p-2 border rounded mb-2"
+      />
+      <textarea
+        placeholder="Mensaje inicial..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        className="w-full p-2 border rounded mb-2"
+      />
+      <button onClick={handleGenerate} className="w-full bg-emerald-600 text-white p-2 rounded">
+        Generar Enlace & QR
+      </button>
+
+      {qrCode && (
+        <div className="mt-4 text-center">
+          <img src={qrCode} alt="WhatsApp QR" className="mx-auto rounded" />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### 4. Sanitización y Validación de Teléfonos
 
 ```typescript
-import { sanitizePhone, formatPhone, isValidPhone, formatPhoneDisplay } from "walink";
+import { sanitizePhone, formatPhone, isValidPhone, formatPhoneDisplay } from "@digitalandia/walink";
 
 // Validación rápida
 if (isValidPhone("+52 55 1234 5678")) {
@@ -125,10 +179,10 @@ const display = formatPhoneDisplay("525512345678");
 
 ---
 
-### 4. Parser Inverso de Enlaces
+### 5. Parser Inverso de Enlaces
 
 ```typescript
-import { parseWaLink } from "walink";
+import { parseWaLink } from "@digitalandia/walink";
 
 const parsed = parseWaLink("https://wa.me/525512345678?text=Hola%20Mundo");
 
@@ -139,10 +193,10 @@ console.log(parsed.scheme); // "wa.me"
 
 ---
 
-### 5. Catálogo de Países y Prefijos
+### 6. Catálogo de Países y Prefijos
 
 ```typescript
-import { COUNTRIES, findCountry } from "walink";
+import { COUNTRIES, findCountry } from "@digitalandia/walink";
 
 // Buscar por prefijo o código ISO
 const mexico = findCountry("52");
@@ -185,6 +239,14 @@ bun run check
 # Compilar para producción (genera dist/)
 bun run build
 ```
+
+---
+
+## Enlaces del Ecosistema
+
+- **Registro npm**: [@digitalandia/walink en npmjs.com](https://www.npmjs.com/package/@digitalandia/walink)
+- **Código Fuente**: [Digitalandia-dev/walink en GitHub](https://github.com/Digitalandia-dev/walink)
+- **Reporte de Problemas**: [GitHub Issues](https://github.com/Digitalandia-dev/walink/issues)
 
 ---
 
