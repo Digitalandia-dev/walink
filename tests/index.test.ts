@@ -3,9 +3,12 @@ import {
   COUNTRIES,
   createWaLink,
   findCountry,
+  formatPhone,
+  formatPhoneDisplay,
   generateWaQR,
   generateWaQRDataUrl,
   generateWaQRSvg,
+  isValidPhone,
   parseWaLink,
   sanitizePhone,
   VERSION,
@@ -16,7 +19,7 @@ describe("Libreria walink v2.0.0", () => {
     expect(VERSION).toBe("2.0.0");
   });
 
-  describe("sanitizePhone", () => {
+  describe("sanitizePhone y formatPhone", () => {
     it("debe limpiar espacios, guiones, parentesis y signos +", () => {
       const result = sanitizePhone("+52 (55) 1234-5678");
       expect(result.fullNumber).toBe("525512345678");
@@ -30,8 +33,29 @@ describe("Libreria walink v2.0.0", () => {
       expect(result.countryCode).toBe("52");
     });
 
+    it("debe corregir caso especial del prefijo movil de Mexico +52 1", () => {
+      const formatted = formatPhone("+52 1 55 1234 5678");
+      expect(formatted).toBe("525512345678");
+    });
+
     it("debe lanzar un error en modo estricto si el numero es invalido", () => {
       expect(() => sanitizePhone("123", { strict: true })).toThrow();
+    });
+  });
+
+  describe("isValidPhone", () => {
+    it("debe retornar true ante numeros validos y false ante invalidos", () => {
+      expect(isValidPhone("+52 55 1234 5678")).toBe(true);
+      expect(isValidPhone("5512345678", "52")).toBe(true);
+      expect(isValidPhone("123")).toBe(false);
+      expect(isValidPhone("")).toBe(false);
+    });
+  });
+
+  describe("formatPhoneDisplay", () => {
+    it("debe retornar numero con prefijo +", () => {
+      expect(formatPhoneDisplay("525512345678")).toBe("+525512345678");
+      expect(formatPhoneDisplay("")).toBe("");
     });
   });
 

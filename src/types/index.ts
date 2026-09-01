@@ -31,6 +31,8 @@ export interface WaLinkConfig {
   strict?: boolean;
 }
 
+export type WaLinkOptions = WaLinkConfig;
+
 export interface SanitizePhoneOptions {
   /**
    * Prefijo o codigo de pais por defecto si el numero no lo incluye.
@@ -141,6 +143,8 @@ export interface WaQRResult {
    */
   link: string;
 }
+
+export type WaLinkResult = WaQRResult;
 
 export interface CountryInfo {
   /**

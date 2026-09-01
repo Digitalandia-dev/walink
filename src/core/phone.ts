@@ -26,6 +26,11 @@ export function sanitizePhone(phone: string, options?: SanitizePhoneOptions): Ph
     }
   }
 
+  // Normalizacion de casos especiales: Prefijo movil de Mexico (+52 1 -> +52)
+  if (cleaned.startsWith("521") && cleaned.length === 13) {
+    cleaned = `52${cleaned.slice(3)}`;
+  }
+
   // Detectar o inferir el codigo de pais
   let countryCode = defaultCountry || "";
   let localNumber = cleaned;
@@ -60,4 +65,39 @@ export function sanitizePhone(phone: string, options?: SanitizePhoneOptions): Ph
     fullNumber: cleaned,
     isValid,
   };
+}
+
+/**
+ * Limpia y normaliza un numero de telefono al formato internacional E.164 (ej: '525512345678').
+ * Corrige casos especiales como el prefijo movil de Mexico (+52 1).
+ *
+ * @param phone - Numero telefonico con o sin formato.
+ * @param defaultCountryCode - Codigo de pais por defecto (ej: '52').
+ * @returns Cadena con el numero normalizado E.164 o vacia si no contiene digitos.
+ */
+export function formatPhone(phone: string, defaultCountryCode?: string): string {
+  return sanitizePhone(phone, { defaultCountryCode }).fullNumber;
+}
+
+/**
+ * Valida de forma rapida y booleana si un numero cumple con la estructura E.164 (7-15 digitos).
+ *
+ * @param phone - Numero telefonico a evaluar.
+ * @param defaultCountryCode - Codigo de pais por defecto opcional.
+ * @returns True si el numero es valido bajo E.164.
+ */
+export function isValidPhone(phone: string, defaultCountryCode?: string): boolean {
+  return sanitizePhone(phone, { defaultCountryCode }).isValid;
+}
+
+/**
+ * Formatea un numero de telefono con el prefijo internacional '+' para su visualizacion en UI.
+ *
+ * @param phone - Numero telefonico.
+ * @returns Cadena formateada con el prefijo '+' (ej: '+525512345678').
+ */
+export function formatPhoneDisplay(phone: string): string {
+  const cleaned = phone.replace(/\D/g, "");
+  if (!cleaned) return "";
+  return `+${cleaned}`;
 }

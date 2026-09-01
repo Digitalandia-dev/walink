@@ -1,8 +1,9 @@
-# Template TypeScript Library
+# walink
 
-Base de desarrollo ultraligera, minimalista y de alto rendimiento para crear, verificar y empaquetar librerías TypeScript modernas en **[Digitalandia](https://digitalandia.com)**.
+Librería TypeScript ultraligera, isomórfica y de alto rendimiento para generar enlaces directos, sanitizar números bajo la norma internacional E.164 y crear códigos QR vectoriales e imprimibles para WhatsApp.
 
 <p align="left">
+  <img src="https://img.shields.io/badge/Versi%C3%B3n-2.0.0-6366f1?style=flat-square" alt="Version 2.0.0" />
   <img src="https://img.shields.io/badge/Bundler-tsup-863bff?style=flat-square&logo=esbuild&logoColor=white" alt="tsup" />
   <img src="https://img.shields.io/badge/Linter_%26_Format-Biome_v2-60a5fa?style=flat-square&logo=biome&logoColor=white" alt="Biome v2" />
   <img src="https://img.shields.io/badge/Test_Runner-Bun_Test-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun Test" />
@@ -12,30 +13,173 @@ Base de desarrollo ultraligera, minimalista y de alto rendimiento para crear, ve
 
 ---
 
-## Inicio Rápido
+## Características Principales
 
-### 1. Inicializar desde la Plantilla
+- **Constructor Universal de Enlaces (`createWaLink`)**: Soporte para `wa.me`, `api.whatsapp.com` y esquema de app nativa `whatsapp://send`.
+- **Sanitización E.164 (`sanitizePhone` & `formatPhone`)**: Limpieza automática de espacios, paréntesis, guiones, símbolos y corrección del prefijo móvil de México (+52 1).
+- **Validador Rápido (`isValidPhone`)**: Verificación booleana instantánea para formularios y validaciones de entrada.
+- **Parser Inverso (`parseWaLink`)**: Descompone cualquier URL existente de WhatsApp extrayendo el teléfono, mensaje y esquema.
+- **Motor de Códigos QR (`generateWaQR`)**: Renderizado en **SVG vectorial** (para lonas, volantes y menús de restaurantes) y **Data URL PNG** (para preview y descarga web).
+- **Corrección de Error 'H' (30%)**: Permite incrustar logotipos en el centro del código QR sin afectar la lectura del escáner.
+- **Catálogo de Países (`COUNTRIES` & `findCountry`)**: Lista completa de países hispanohablantes e internacionales con prefijos y códigos ISO.
+- **Dual ESM / CJS & Tipado Estricto**: Compatible con React, Next.js, Vue, Vite, Node.js, Bun, Deno y Edge Workers.
 
-Para clonar y crear un nuevo proyecto a partir de este repositorio:
+---
+
+## Instalación
 
 ```bash
-# Crear proyecto desde la plantilla
-bun create Digitalandia-dev/ts-library-template mi-libreria
+# Con Bun
+bun add walink
 
-# Entrar al directorio
-cd mi-libreria
+# Con NPM
+npm install walink
 
-# Instalar dependencias
-bun install
+# Con PNPM
+pnpm add walink
 ```
 
-### 2. Comandos de Desarrollo
+---
+
+## Guía de Uso
+
+### 1. Crear un enlace directo de WhatsApp
+
+```typescript
+import { createWaLink } from "walink";
+
+// Enlace simple
+const link = createWaLink({
+  phone: "+52 (55) 1234-5678",
+});
+// https://wa.me/525512345678
+
+// Enlace con mensaje predeterminado y emojis
+const customLink = createWaLink({
+  phone: "5512345678",
+  defaultCountryCode: "52",
+  text: "¡Hola! Quisiera agendar una cita 📅 y pedir información 🚀",
+  scheme: "wa.me", // Opcional: 'wa.me' | 'api.whatsapp.com' | 'whatsapp://send'
+});
+// https://wa.me/525512345678?text=%C2%A1Hola!%20Quisiera%20agendar%20una%20cita%20%F0%9F%93%85%20y%20pedir%20informaci%C3%B3n%20%F0%9F%9A%80
+```
+
+---
+
+### 2. Generar Códigos QR (SVG Vectorial y Data URL PNG)
+
+```typescript
+import { generateWaQR, generateWaQRSvg, generateWaQRDataUrl } from "walink";
+
+// Generar tanto SVG como PNG Data URL
+const qr = await generateWaQR(
+  {
+    phone: "+52 55 1234 5678",
+    text: "Hola, me interesa el servicio",
+  },
+  {
+    width: 400,
+    margin: 2,
+    errorCorrectionLevel: "H", // Nivel alto (30%) para colocar logos centrales
+    color: {
+      dark: "#25D366", // Color del código
+      light: "#FFFFFF", // Fondo
+    },
+  }
+);
+
+console.log(qr.link);    // URL final de WhatsApp
+console.log(qr.svg);     // <svg ...> (Listo para imprenta o insertar en DOM)
+console.log(qr.dataUrl); // data:image/png;base64,... (Listo para <img src="...">)
+```
+
+---
+
+### 3. Sanitización y Validación de Teléfonos
+
+```typescript
+import { sanitizePhone, formatPhone, isValidPhone, formatPhoneDisplay } from "walink";
+
+// Validación rápida
+if (isValidPhone("+52 55 1234 5678")) {
+  console.log("Número válido");
+}
+
+// Normalización al estándar E.164 (corrige automáticamente casos como +52 1 en México)
+const normalized = formatPhone("+52 1 (55) 1234-5678");
+// "525512345678"
+
+// Desglose detallado
+const info = sanitizePhone("+52 (55) 1234-5678");
+// {
+//   countryCode: "52",
+//   number: "5512345678",
+//   fullNumber: "525512345678",
+//   isValid: true
+// }
+
+// Formateo visual para el usuario
+const display = formatPhoneDisplay("525512345678");
+// "+525512345678"
+```
+
+---
+
+### 4. Parser Inverso de Enlaces
+
+```typescript
+import { parseWaLink } from "walink";
+
+const parsed = parseWaLink("https://wa.me/525512345678?text=Hola%20Mundo");
+
+console.log(parsed.phone);  // "525512345678"
+console.log(parsed.text);   // "Hola Mundo"
+console.log(parsed.scheme); // "wa.me"
+```
+
+---
+
+### 5. Catálogo de Países y Prefijos
+
+```typescript
+import { COUNTRIES, findCountry } from "walink";
+
+// Buscar por prefijo o código ISO
+const mexico = findCountry("52");
+// { iso: "MX", name: "Mexico", dialCode: "52" }
+
+const colombia = findCountry("CO");
+// { iso: "CO", name: "Colombia", dialCode: "57" }
+```
+
+---
+
+## API Reference
+
+| Función / Constante | Descripción |
+| :--- | :--- |
+| `createWaLink(options)` | Genera la URL codificada de WhatsApp según el esquema elegido. |
+| `generateWaQR(linkOrOptions, qrOptions?)` | Retorna `{ svg, dataUrl, link }` con el código QR renderizado. |
+| `generateWaQRSvg(linkOrOptions, qrOptions?)` | Genera directamente la cadena SVG vectorial pura. |
+| `generateWaQRDataUrl(linkOrOptions, qrOptions?)` | Genera la cadena Data URL en PNG Base64. |
+| `sanitizePhone(phone, options?)` | Desglosa el teléfono en `{ countryCode, number, fullNumber, isValid }`. |
+| `formatPhone(phone, defaultCountryCode?)` | Normaliza el número al formato estándar internacional E.164. |
+| `isValidPhone(phone, defaultCountryCode?)` | Retorna un booleano indicando si el número es válido bajo E.164. |
+| `formatPhoneDisplay(phone)` | Añade el prefijo `+` para formateo visual legible. |
+| `parseWaLink(url)` | Extrae número, mensaje decodificado y esquema desde cualquier link existente. |
+| `findCountry(query)` | Busca un país por prefijo telefónico o código ISO 3166-1. |
+| `COUNTRIES` | Catálogo completo de países con código ISO, nombre y dialCode. |
+| `VERSION` | Cadena con la versión semántica actual de la librería. |
+
+---
+
+## Comandos de Desarrollo
 
 ```bash
-# Iniciar modo desarrollo (watch mode en tiempo real)
+# Iniciar modo desarrollo
 bun run dev
 
-# Validar tipos, tests y reglas de formato
+# Ejecutar validación completa (typecheck + tests + lint)
 bun run check
 
 # Compilar para producción (genera dist/)
@@ -44,92 +188,6 @@ bun run build
 
 ---
 
-## Cómo Consumir la Librería en otros Proyectos
-
-Una vez publicada o instalada localmente, los consumidores pueden instalarla con cualquier gestor de paquetes:
-
-```bash
-# Con Bun
-bun add @digitalandia/mi-libreria
-
-# Con NPM
-npm install @digitalandia/mi-libreria
-
-# Con PNPM
-pnpm add @digitalandia/mi-libreria
-```
-
-Y usarla en cualquier entorno (soporte nativo ESM y CommonJS):
-
-```typescript
-// Módulos ESM (Vite, Next.js, Cloudflare Workers, Astro)
-import { greet } from "@digitalandia/mi-libreria";
-
-console.log(greet({ name: "Digitalandia" }));
-```
-
-```javascript
-// CommonJS (Node.js tradicional)
-const { greet } = require("@digitalandia/mi-libreria");
-
-console.log(greet({ name: "Digitalandia" }));
-```
-
----
-
-## Características Técnicas
-
-- **Empaquetado Ultrarrápido (`tsup`)**: Compilación optimizada sobre `esbuild` con soporte Dual Output (ESM para Vite/Next.js/Cloudflare y CommonJS para Node.js tradicional).
-- **Definiciones TypeScript (`.d.ts`)**: Generación automática de tipos y sourcemaps para integración nativa de autocompletado en cualquier editor.
-- **Suite de Pruebas Nativa (`bun test`)**: Ejecución instantánea de pruebas unitarias sin sobrecarga ni dependencias externas pesadas.
-- **Linter & Formatter Determinista (`@biomejs/biome`)**: Análisis estático y formateo estricto de código en milisegundos.
-- **Comando Unificado de Calidad (`bun run check`)**: Valida en cadena la verificación de tipos (`tsc`), suite de pruebas y formateo antes de compilar o publicar.
-- **TypeScript Estricto**: Configuración de `tsconfig.json` con `strict: true` y resolución de módulos moderna.
-
----
-
-## Estructura del Proyecto
-
-```text
-├── src/
-│   └── index.ts          # Punto de entrada principal y exports públicos
-├── tests/
-│   └── index.test.ts     # Pruebas unitarias con bun:test
-├── dist/                 # Artefactos compilados (ESM, CJS, DTS)
-├── biome.json            # Configuración de formateo y reglas de linter
-├── package.json          # Manifiesto npm con mapeo dual de exports
-├── tsconfig.json         # Configuración estricta de TypeScript
-├── tsup.config.ts        # Configuración de build tsup
-├── LICENSE               # Licencia de software MIT
-└── README.md
-```
-
----
-
-## Comandos Disponibles
-
-| Comando              | Descripción                                                           |
-| :------------------- | :-------------------------------------------------------------------- |
-| `bun run dev`        | Inicia la compilación en tiempo real ante cualquier cambio en `src/`. |
-| `bun run build`      | Genera los artefactos finales de producción en el directorio `dist/`. |
-| `bun run check`      | Ejecuta la validación completa (`typecheck` + `test` + `lint`).       |
-| `bun run test`       | Ejecuta las pruebas unitarias con `bun test`.                         |
-| `bun run test:watch` | Ejecuta las pruebas en modo interactivo/observador.                   |
-| `bun run typecheck`  | Valida errores de tipos TypeScript sin emitir archivos.               |
-| `bun run lint`       | Ejecuta el análisis estático de código con Biome.                     |
-| `bun run format`     | Corrige y formatea automáticamente el código con Biome.               |
-
----
-
-## Uso de la Plantilla para una Nueva Librería
-
-1. **Definir el paquete:** Actualizar los campos `name`, `description` y `version` en `package.json`.
-2. **Escribir la lógica:** Implementar las funciones y tipos en `src/index.ts`.
-3. **Escribir los tests:** Añadir las especificaciones de prueba en `tests/`.
-4. **Verificar y Compilar:** Ejecutar `bun run check` seguido de `bun run build`.
-
----
-
 ## Licencia
 
-Este proyecto se distribuye bajo la Licencia **MIT**. Consulte el archivo [LICENSE](./LICENSE) para más detalles.
+Distribuido bajo la Licencia **MIT**. Desarrollado para **[Digitalandia](https://digitalandia.com)**.
